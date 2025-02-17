@@ -1,0 +1,10 @@
+# I use vscode a log, but piping to vscode causes it to hang. This is a workaround.
+code_eof () {
+  FILENAME=$(date +%s)
+  cat > /tmp/$FILENAME
+  code /tmp/$FILENAME
+
+  # make sure that vscode has time to open the file if vscode hasn't
+  # started yet; see https://stackoverflow.com/a/69135912/4460349
+  sleep 1; rm /tmp/$FILENAME
+}
