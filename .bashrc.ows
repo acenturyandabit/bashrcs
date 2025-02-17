@@ -1,0 +1,52 @@
+
+ows () {
+OWS_USAGE=$(cat <<EOF
+ows - open workspace in vscode, with partial string matching, and flags to create it if it doesn't exist.
+Usage: ows [-r] [-c] workspace-name
+  -r: open the workspace in the current window (flag passed as code -r)
+  -c: create the workspace if it doesn't exist
+If there are multiple workspaces that match the same partial string, they will be listed.
+EOF
+)
+  if [ -z "$OWS_ROOT" ]; then
+    echo "OWS_ROOT is not set. Please set it to the root of your projects directory in your main .bashrc file."
+    return 1
+  fi
+  local create=false R_FLAG=""
+  while getopts "cr" opt; do
+    case $opt in
+      c) create=true ;;
+      r) R_FLAG="-r" ;;
+      *) echo "Invalid option $opt"; return 1 ;;
+    esac
+  done
+  shift $((OPTIND - 1))
+  if [ $# -eq 0 ]; then
+    echo "$OWS_USAGE"
+    return 1
+  fi
+  local workspace_name="$@"
+  if [ -z "$workspace_name" ]; then
+    echo "Please specify a workspace name."
+    return 1
+  fi
+  local workspaces=($(find "$OWS_ROOT" -maxdepth 1 -type d -name "$workspace_name*" | sort))
+  if [ ${#workspaces[@]} -eq 0 ]; then
+    if $create; then
+      mkdir "$OWS_ROOT/$workspace_name"
+      code "$OWS_ROOT/$workspace_name"
+    else
+      echo "No workspaces found with name $workspace_name."
+      ls "$OWS_ROOT"
+    fi
+    return
+  fi
+  if [ ${#workspaces[@]} -gt 1 ]; then
+    echo "Multiple workspaces found with name $workspace_name:"
+    for workspace in "${workspaces[@]}"; do
+      echo "  $workspace"
+    done
+    return
+  fi
+  code $R_FLAG "$workspaces"
+}
