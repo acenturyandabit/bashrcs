@@ -1,6 +1,6 @@
 # bashrcs
 
-This is a collection of my personal `.bashrc` files.
+This is a collection of my personal `.bashrc` files. I was previously using github gists, but gists' source control only shows diffs, not the whole file, whereas you can use git to see whole past versions of a file.
 
 ## Usage
 
