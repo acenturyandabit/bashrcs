@@ -1,6 +1,10 @@
 # I use vscode a log, but piping to vscode causes it to hang. This is a workaround.
 code_eof () {
-  FILENAME=$(date +%s)
+  if [ -z "$1" ]; then
+    FILENAME=$(date +%s)
+  else
+    FILENAME=$1
+  fi
   cat > /tmp/$FILENAME
   code /tmp/$FILENAME
 
