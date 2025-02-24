@@ -13,6 +13,7 @@ EOF
     return 1
   fi
   local create=false R_FLAG=""
+  OPTIND=0
   while getopts "cr" opt; do
     case $opt in
       c) create=true ;;

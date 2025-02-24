@@ -1,0 +1,75 @@
+# NextTask: A CLI based task manager.
+# Usage: nt [-e] [-p <long-running-task>]
+#   -e: open the next task file in vscode. Edit this to specify your task priority list.
+#   -p: Run the specified long-running task and switch to the next task; when the long-running task is done, switch back to the current task.
+
+# How it works
+# 1. The next task file is a text file that contains a list of tasks, one per line.
+# 2. The first non-blocked task is the next task to run. Tasks are blocked by prepending the task name with "b".
+
+# Customization
+# In your main .bashrc file, you can:
+# 1. Set NEXT_TASK_FILE to the path of your next task file.
+# 2. Set NEXT_TASK_COMMAND to the command to run the next task. By default, it is "ows" (see bashrc.ows).
+# 3. Set NEXT_TASK_EDITOR to the command to open the next task file. By default, it is "code" (vscode).
+
+NEXT_TASK_FILE=${NEXT_TASK_FILE:-~/.nexttask}
+NEXT_TASK_COMMAND=${NEXT_TASK_COMMAND:-ows}
+NEXT_TASK_EDITOR=${NEXT_TASK_EDITOR:-code}
+NEXT_TASK_ENABLE_PS1_INTEGRATION=${NEXT_TASK_ENABLE_PS1_INTEGRATION:-true}
+
+# assume that when the shell was created, the current task is the task that is
+# being worked on. This can be overridden.
+NEXT_TASK_GET_SHELL_TASK=${NEXT_TASK_GET_SHELL_TASK:-nt_get_current_task}
+
+nt () {
+  OPTIND=0
+  while getopts "ep:" opt; do
+    case $opt in
+      e) $NEXT_TASK_EDITOR $NEXT_TASK_FILE; return 0;;
+      p) CURRENT_TASK=$(nt_get_current_task);
+        sed "s/^$CURRENT_TASK/ b $CURRENT_TASK/g" -i $NEXT_TASK_FILE
+        nt_switch_to_next_task
+        shift;
+        $@
+        sed "s/^b $CURRENT_TASK/$CURRENT_TASK/g" -i $NEXT_TASK_FILE
+        nt_switch_to_next_task
+        return 0;;
+      \?) echo "Invalid option: -$OPTARG" >&2; return 1;;
+    esac
+  done
+  nt_switch_to_next_task
+}
+
+nt_switch_to_next_task () {
+  CURRENT_TASK=$(nt_get_current_task)
+  if [[ -z $CURRENT_TASK ]]; then
+    echo "No task to switch to" >&2
+    $NEXT_TASK_EDITOR $NEXT_TASK_FILE
+    return 0
+  else
+    echo "Switching to task: $CURRENT_TASK" >&2
+    $NEXT_TASK_COMMAND $CURRENT_TASK
+  fi
+}
+
+nt_make_ps1 () {
+  if [ ! -e $NEXT_TASK_FILE ]; then
+    return 0
+  fi
+  # eval must be used here otherwise the NEXT_TASK_GET_SHELL_TASK is interpreted
+  # as a single command followed by args
+  STORED_TASK=${STORED_TASK:-$(eval $NEXT_TASK_GET_SHELL_TASK)}
+  echo "$STORED_TASK "
+  # Handy OWS integration which reads the name of the task from your NEXT_TASK file based on the current OWS workspace:
+  # OWS_ROOT_CHARS=$(( $(echo $OWS_ROOT | wc -c) + 1 ))
+  # NEXT_TASK_GET_SHELL_TASK="(grep \$NEXT_TASK_FILE -e \$(pwd | cut -c $OWS_ROOT_CHARS-) | cut -d' ' -f2-;  exit \${PIPESTATUS[0]}) || echo 'No task description'"
+}
+
+nt_get_current_task () {
+  grep -v '^b ' $NEXT_TASK_FILE | head -n 1 | cut -d' ' -f1
+}
+
+if $NEXT_TASK_ENABLE_PS1_INTEGRATION; then
+  PS1="$PS1$(nt_make_ps1)"
+fi
