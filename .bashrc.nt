@@ -60,7 +60,7 @@ nt_make_ps1 () {
   # eval must be used here otherwise the NEXT_TASK_GET_SHELL_TASK is interpreted
   # as a single command followed by args
   STORED_TASK=${STORED_TASK:-$(eval $NEXT_TASK_GET_SHELL_TASK)}
-  echo "$STORED_TASK "
+  echo "$STORED_TASK\n"
   # Handy OWS integration which reads the name of the task from your NEXT_TASK file based on the current OWS workspace:
   # OWS_ROOT_CHARS=$(( $(echo $OWS_ROOT | wc -c) + 1 ))
   # NEXT_TASK_GET_SHELL_TASK="(grep \$NEXT_TASK_FILE -e \$(pwd | cut -c $OWS_ROOT_CHARS-) | cut -d' ' -f2-;  exit \${PIPESTATUS[0]}) || echo 'No task description'"

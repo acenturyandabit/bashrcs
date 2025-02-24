@@ -4,4 +4,10 @@ This is a collection of my personal `.bashrc` files. I was previously using gith
 
 ## Usage
 
-Clone this repo to your home directory, then add `source ~/bashrcs/.bashrc.*` to your `.bashrc` file. You can of course only source the files you want.
+Clone this repo to your home directory, then add 
+```bash
+for file in ~/bashrcs/.bashrc.*; do source $file; done
+```
+to your `.bashrc` file. You can of course only source the files you want.
+
+Note `xargs` doesn't work, because 'source' is a bash builtin, not an external command.
