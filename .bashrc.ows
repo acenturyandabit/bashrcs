@@ -12,17 +12,22 @@ EOF
     echo "OWS_ROOT is not set. Please set it to the root of your projects directory in your main .bashrc file."
     return 1
   fi
-  local create=false R_FLAG=""
+  local create=false R_FLAG="" show_help=false
   OPTIND=0
-  while getopts "cr" opt; do
+  while getopts "crh" opt; do
     case $opt in
       c) create=true ;;
       r) R_FLAG="-r" ;;
+      h) show_help=true ;;
       *) echo "Invalid option $opt"; return 1 ;;
     esac
   done
   shift $((OPTIND - 1))
   if [ $# -eq 0 ]; then
+    ls "$OWS_ROOT"
+    return
+  fi
+  if $show_help; then
     echo "$OWS_USAGE"
     return 1
   fi
@@ -31,7 +36,13 @@ EOF
     echo "Please specify a workspace name."
     return 1
   fi
-  local workspaces=($(find "$OWS_ROOT" -maxdepth 1 -type d -name "$workspace_name*" | sort))
+  if [ -e "$OWS_ROOT/$workspace_name" ]; then
+    # exact workspace name match
+    code "$OWS_ROOT/$workspace_name"
+    return
+  fi
+
+  local workspaces=($(find "$OWS_ROOT" -maxdepth 1 -type d -name "*$workspace_name*" | sort))
   if [ ${#workspaces[@]} -eq 0 ]; then
     if $create; then
       mkdir "$OWS_ROOT/$workspace_name"
@@ -51,3 +62,9 @@ EOF
   fi
   code $R_FLAG "$workspaces"
 }
+
+# For terminals opened by ows, the WSR variable is set to the path of the workspace root.
+# This allows us to quickly write absolute paths to files in the workspace.
+if pwd | grep -q "^$OWS_ROOT"; then
+  WSR=$(pwd)
+fi
